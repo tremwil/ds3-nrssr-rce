@@ -9,7 +9,7 @@ This repository contains proof of concept code and documentation for the most re
 | DS1 PTDE | Yes | RCE (probable) | | Unknown |
 | DS2 |  Yes | RCE (probable) | | Unknown |
 | Bloodborne | Unknown | Unknown | | |
-| DS3 |  Yes | **RCE (demonstrated)[^2]** | https://github.com/nrssr/ds3-nrssr-rce | nrssr |
+| DS3 |  Yes | **RCE (demonstrated)[^2]** | https://github.com/tremwil/ds3-nrssr-rce | nrssr |
 | DS1R |  Yes | RCE (theoretical)[^3] | | Unknown |
 | Sekiro | Yes | None (code never called) | | sfix |
 | Elden Ring CNT | Yes | RCE (probable) | | sfix |
