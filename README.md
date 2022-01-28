@@ -10,13 +10,12 @@ This repository contains proof of concept code and documentation for the most re
 | DS2 |  Yes | RCE (probable) | | Unknown |
 | Bloodborne | Unknown | Unknown | | |
 | DS3 |  Yes | **RCE (demonstrated)[^2]** | https://github.com/tremwil/ds3-nrssr-rce | nrssr |
-| DS1R |  Yes | RCE (theoretical)[^3] | | Unknown |
+| DS1R |  Yes | RCE (probable) | | Unknown |
 | Sekiro | Yes | None (code never called) | | sfix |
 | Elden Ring CNT | Yes | RCE (probable) | | sfix |
 
 [^1]: Not definitely known whether the exploit can be sucessfully pulled off here.
 [^2]: Exploit is known to be possible and an working implementation has been written.
-[^3]: Exploit should be possible, but no working implementation has been written.
 
 # Dispelling Misconceptions
 Contrary to popular belief, this is NOT a peer-to-peer networking exploit. It is related to the matchmaking server and thus much more severe, since you do not need to partake in any multiplayer activity to be vulnerable due to another matchmaking server vulnerability. 
