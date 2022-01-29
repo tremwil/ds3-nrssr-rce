@@ -5,35 +5,46 @@ This repository contains proof of concept code and documentation for the most re
 ## Presence of the vulnerability in other games
 | Game | Present? | "Exploitability" | Details/Implementation | Credit |
 |-|:-:|-|-|-|
-| DeS | Yes | RCE (probable)[^1] | | Unknown |
-| DS1 PTDE | Yes | RCE (probable) | | Unknown |
-| DS2 |  Yes | RCE (probable) | | Unknown |
+| DeS | Unknown | Unknown | | |
+| DS1 PTDE | Yes | RCE (theoretical)[^1] | | LukeYui |
+| DS2 |  Yes | RCE (theoretical) | | LukeYui |
 | Bloodborne | Unknown | Unknown | | |
 | DS3 |  Yes | **RCE (demonstrated)[^2]** | https://github.com/tremwil/ds3-nrssr-rce | tremwil |
-| DS1R |  Yes | RCE (probable) | | Unknown |
-| Sekiro | Yes | None (code never called) | | sfix |
-| Elden Ring CNT | Yes | RCE (probable) | | sfix |
+| DS1R |  Yes | RCE (theoretical) | | MetalCrow |
+| Sekiro | Yes | None (code never called) | | LukeYui |
+| Elden Ring CNT | Yes | RCE (probable) | | LukeYui |
 
-[^1]: Not definitely known whether the exploit can be sucessfully pulled off here.
-[^2]: Exploit is known to be possible and an working implementation has been written.
+
+[^1]: The RCE is possible in theory, but no proof of concept code has been written yet.
+[^2]: Proof of concept code for the exploit has been demonstrated.
 
 # Dispelling Misconceptions
 Contrary to popular belief, this is NOT a peer-to-peer networking exploit. It is related to the matchmaking server and thus much more severe, since you do not need to partake in any multiplayer activity to be vulnerable due to another matchmaking server vulnerability. 
 
-### TO BE CLEAR: A malicious attacker abusing this would have been able to reliably execute a payload of up to 1.3MiB[^4] of shellcode on every online player's machine within seconds. 
+### TO BE CLEAR: In Dark Souls III, A malicious attacker abusing this would have been able to reliably execute a payload of up to 1.3MiB[^3] of shellcode on every online player's machine within seconds. 
  
 Due to the ridiculous severity of this exploit, its live demonstration was intentionally designed to spread the rumor that it was P2P related in order to hide it's true severity from malicious actors and hinder the discovery process for them, in the case that FROM SOFTWARE did not act quickly enough.
 
-[^4]: For Dark Souls III Ver. 1.15. The maximum theoretical payload size depends on the stack layout and as such will vary by game and version.
+[^3]: For Dark Souls III Ver. 1.15. The maximum theoretical payload size depends on the stack layout and as such will vary by game and version.
 
-# Table of Contents
-TODO
+# Table of Contents  
+- [Exploit Summary](#summary)
+- [The General Exploitation Tactic for All Games](#generic_exploit)
+  - [Bug #1: No Bounds Check in Entry List Parser](#gen_bug1)
+  - [Bug #2: Buffer Overrun in `NRSessionSearchResult` Parser](#gen_bug2)
+  - [Paving the way for the ROP chain](#gen_acr)
+- [Detailed Explanation of the PoC code for Dark Souls III](#ds3_explanation)
+
+
+<a name="summary"/>
 
 # Exploit Summary
 Improper bounds checking on a stack buffer and data size field during the parsing of `NRSessionSearchResult` matchmaking data allows an attacker to execute arbitrary code. The stack overflow allows one to overwrite the lower two bytes `vftable_ptr` of the `DLMemoryInputStream` object used internally by the stream reader, redirecting execution to carefully chosen neighboring code. Clever exploitation of the `DLMemoryInputStream` object's structure and data size field then allows one to achieve arbitrary code redirection. From there an ROP chain can be used to achieve arbitrary code execution.
 
+<a name="vectors"/>
+
 # Distribution vectors
-The distribution vectors are what make this particular RCE extremely serious (beyond already being an RCE). The exploit is transmitted through matchmaking push requests containing `NRSessionSearchResult` information. This means that the attacker can target anyone who joins their online session. In particular: 
+The distribution vectors are what make this particular RCE extremely serious (beyond already being an RCE). The exploit is transmitted through matchmaking push requests containing `NRSessionSearchResult` information. This means that the attacker can target anyone who joins their online session. In particular, for DS3: 
 - summons (`PushRequestSummonSign`)
 - dark spirits invaders (`PushRequestAllowBreakInTarget`)
 - players joining via covenant (`PushRequestVisit`)
@@ -50,11 +61,17 @@ The host uses this request to directly send the `PushRequestAllowBreakInTarget` 
 ### Yet it allows any client to send arbitrary push messages to hundreds of thousands of specific players.
 I cannot stress how horribly unsafe this is. Any player can basically impersonnate the matchmaking server. By using this request to send the exploit through a `PushRequestVisit`, any online player can be remotely targeted by the attacker as long as their player ID is known. The attacker can also send the exploit to the entire online playerbase very quickly by sending multiple requests, each containing a large slice of possible player IDs.
 
+<a name="generic_exploit"/>
+
 # The General Exploitation Tactic for All Games
 While the RCE does not port exactly to every game, the core idea of the exploit which gives the attacker arbitrary code *redirection* is the same. If this can be achieved, it is very likely that a game-specific ROP chain can then be found. This "first step" uses the following vulnerabilities:
 
+<a name="gen_bug1"/>
+
 ## Bug #1: No Bounds Check in Entry List Parser
 Matchmaking push requests containing session join information store said information in a custom binary format which consists of a chain of length-deliminted data entries. Each entry consists of some kind of ID stored in a `uint32_t` followed by the size of the data entry as a `uint32_t` and the data itself. The game function responsible for copying the data of these entries blindly trusts the size field, which creates an out-of-bounds read. This can be abused by a malicious client by setting the size field to values like `0x7FFFFFFF`, causing the memory allocation to fail and the victim's game to crash. Later, this size is also passed to the constructor of a `DLMemoryInputSteam`, which is an instrumental part of the exploit. 
+
+<a name="gen_bug2"/>
 
 ## Bug #2: Buffer Overrun in `NRSessionSearchResult` Parser
 One of the entries in the data structure described above is a serialized `NRSessionSearchResult` object. The parser for this data first parses a list of properties. These properties can be 4 byte ints, 8 byte ints or null-terminated wide strings. This property list is followed by a null-terminated wide string `ホスト名`（host name）and some additional data not important for the exploit. Both this function and the property list parser use a fixed-size stack buffer to read strings, and in both cases no bounds check is performed on the buffer. Here is the game code responsible for copying the host name (produced using the Ghidra decompiler and then cleaned up): 
@@ -69,6 +86,8 @@ do {
 } while (wchr != 0);
 ```
 This leads to a buffer overrun exploit, allowing the attacker to corrupt the stack. 
+
+<a name="gen_acr"/>
 
 ## Paving the way for the ROP chain
 To achieve arbitrary code redirection, we use this and the memory layout of a `DLMemoryInputStream` object instantiated on the stack by the function calling the parser, which is used internally by the stream reader:
