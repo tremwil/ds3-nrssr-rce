@@ -1,5 +1,5 @@
 # ds3-nrssr-rce
-This repository contains proof of concept code and documentation for the most recent RCE exploit affecting FROM SOFTWARE games. While theoretically possible in other games, focus is on Dark Souls III as this is the game my research has been conducted on. If you wish to contribute implementations and documentation for other games, please do so in a separate repository and add your link to the table below using a pull request:
+This repository contains proof of concept code and documentation for the most recent RCE exploit affecting FROM SOFTWARE games, CVE-2022-24126. While theoretically possible in other games, focus is on Dark Souls III as this is the game my research has been conducted on. If you wish to contribute implementations and documentation for other games, please do so in a separate repository and add your link to the table below using a pull request:
 
 
 ## Presence of the vulnerability in other games
@@ -19,7 +19,7 @@ This repository contains proof of concept code and documentation for the most re
 [^2]: Proof of concept code for the exploit has been demonstrated.
 
 # Dispelling Misconceptions
-Contrary to popular belief, this is NOT a peer-to-peer networking exploit. It is related to the matchmaking server and thus much more severe, since you do not need to partake in any multiplayer activity to be vulnerable due to another matchmaking server vulnerability. 
+Contrary to popular belief, this is NOT a peer-to-peer networking exploit. It is related to the matchmaking server and thus much more severe, since you do not need to partake in any multiplayer activity to be vulnerable due to another matchmaking server vulnerability (CVE-2022-24125). 
 
 ### TO BE CLEAR: In Dark Souls III, A malicious attacker abusing this would have been able to reliably execute a payload of up to 1.3MiB[^3] of shellcode on every online player's machine within seconds. 
  
@@ -43,7 +43,7 @@ Improper bounds checking on a stack buffer and data size field during the parsin
 
 <a name="vectors"/>
 
-# Distribution vectors
+# Distribution vectors (CVE-2022-24125)
 The distribution vectors are what make this particular RCE extremely serious (beyond already being an RCE). The exploit is transmitted through matchmaking push requests containing `NRSessionSearchResult` information. This means that the attacker can target anyone who joins their online session. In particular, for DS3: 
 - summons (`PushRequestSummonSign`)
 - dark spirits invaders (`PushRequestAllowBreakInTarget`)
