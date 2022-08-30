@@ -1,10 +1,13 @@
+# Update: Dark Souls III 1.15.1
+A new game update, 1.15.1, has been released for Dark Souls III on 2022/08/25, along with the restoration of online services. **This update fixed both CVE-2022-24125 and CVE-2022-24126**, along with a wide variety of other potential security vulnerabilities present in the game's P2P networking (OOB reads/writes). Furthermore, all known exploits allowing one to corrupt the save of other players have been fixed. Many common petty cheats (e.g. "curse knife") which could be encountered often during online multiplayer have also been patched. 
+
 # ds3-nrssr-rce
 This repository contains proof of concept code and documentation for the most recent RCE exploit affecting FROM SOFTWARE games, CVE-2022-24126. While theoretically possible in other games, focus is on Dark Souls III as this is the game my research has been conducted on. As of now proof of concept code only exists for Dark Souls III, the vulnerability has been confirmed to be present in:
 
 - Dark Souls 1 PTDE (credit: [LukeYui](https://github.com/LukeYui/))
 - Dark Souls Remastered (credit: [metal-crow](https://github.com/Metal-Crow/))
 - Dark Souls 2 (including Scholar) (credit: [LukeYui](https://github.com/LukeYui/))
-- Dark Souls 3 (credit: [tremwil](https://github.com/tremwil/))
+- Dark Souls 3 (up to 1.15.0) (credit: [tremwil](https://github.com/tremwil/))
 
 The vulnerable code is also present in Sekiro (credit: [LukeYui](https://github.com/LukeYui/)), although there is no way to trigger it. Presence in Demon's Souls has not been confirmed but is very likely. **While the closed network test was affected by this, the release version of Elden Ring is not.** In fact, a huge list of network crashes, out-of-bounds reads/writes and exploits allowing players to modify the game data of peers which were present in Dark Souls III have been patched in Elden Ring. Kudos to [LukeYui](https://github.com/LukeYui/) for compiling this list and to FROM SOFTWARE for acting swiftly! I'm happy to say that **Elden Ring is undisputably the safest FROM SOFTWARE title when it comes to the extent of the damage hackers can inflict.**
 
